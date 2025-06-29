@@ -11,10 +11,10 @@ dependencies:
     repository: "https://helm.releases.hashicorp.com"
     condition: vault.enabled
 
-#  - name: bank-vaults
-#    version: "1.20.6"
-#    repository: "oci://ghcr.io/bank-vaults/helm-charts"
-#    condition: vault.mutatingWebhook.enabled
+  - name: bank-vaults
+    version: "1.20.0"
+    repository: "https://kubernetes-charts.banzaicloud.com"
+    condition: vault.mutatingWebhook.enabled
 
   - name: kube-prometheus-stack
     version: "45.0.0"
