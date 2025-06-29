@@ -18,13 +18,13 @@ spec:
       parameters:
         - name: global.imageRegistry
           value: "localhost:5000"
-        - name: processingOrders.image.tag
+        - name: rentalCore.image.tag
           value: "latest"
-        - name: rentalCore.image.tag  
+        - name: docService.image.tag
           value: "latest"
-        - name: promotions.image.tag
+        - name: notificationService.image.tag
           value: "latest"
-        - name: databaseMigrator.image.tag
+        - name: maintenanceService.image.tag
           value: "latest"
   
 destination:
