@@ -19,11 +19,11 @@ vault:
             - path: /
               pathType: Prefix
   mutatingWebhook:
-    enabled: true
+    enabled: false
     
 bank-vaults:
   webhook:
-    enabled: true
+    enabled: false
     configMapName: vault-webhook-config
     env:
       VAULT_ADDR: "http://vault:8200"
