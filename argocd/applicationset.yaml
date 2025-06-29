@@ -8,16 +8,16 @@ spec:
   - list:
       elements:
       - name: vault
-        path: argocd/application/vault.yaml
+        path: argocd/application/vault
         priority: "1"
       - name: prometheus-stack
-        path: argocd/application/prometheus.yaml
+        path: argocd/application/prometheus
         priority: "2"
       - name: argo-rollouts
-        path: argocd/application/argo-rollouts.yaml
+        path: argocd/application/argo-rollouts
         priority: "3"
       - name: rental-platform
-        path: argocd/application/rental-platform.yaml
+        path: argocd/application/rental-platform
         priority: "4"
   
   template:
