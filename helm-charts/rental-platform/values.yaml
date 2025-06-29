@@ -104,10 +104,6 @@ docService:
   service:
     type: ClusterIP
     port: 8080
-  ingress:
-    enabled: true
-    className: nginx
-    host: doc-service.local
   resources:
     requests:
       memory: "128Mi"
@@ -127,10 +123,6 @@ maintenanceService:
   service:
     type: ClusterIP
     port: 8080
-  ingress:
-    enabled: true
-    className: nginx
-    host: maintenance-service.local
   resources:
     requests:
       memory: "128Mi"
@@ -150,10 +142,6 @@ notificationService:
   service:
     type: ClusterIP
     port: 8080
-  ingress:
-    enabled: true
-    className: nginx
-    host: notificationService.local
   resources:
     requests:
       memory: "128Mi"
