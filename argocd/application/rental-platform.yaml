@@ -27,20 +27,20 @@ spec:
         - name: maintenanceService.image.tag
           value: "latest"
   
-destination:
-  server: https://kubernetes.default.svc
-  namespace: rental-platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: rental-platform
   
-syncPolicy:
-  automated:
-    prune: true
-    selfHeal: true
-  syncOptions:
-    - CreateNamespace=true
-    - PrunePropagationPolicy=foreground
-  retry:
-    limit: 5
-    backoff:
-      duration: 5s
-      factor: 2
-      maxDuration: 3m
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
