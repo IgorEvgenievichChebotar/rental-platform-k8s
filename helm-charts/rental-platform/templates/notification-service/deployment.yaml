@@ -1,0 +1,54 @@
+{{- if .Values.notificationService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notificationService
+  namespace: {{ .Values.global.namespace }}
+spec:
+  replicas: {{ .Values.notificationService.replicaCount }}
+  selector:
+    matchLabels:
+      app: notificationService
+  template:
+    metadata:
+      annotations:
+        {{- if .Values.notificationService.vault.enabled }}
+        vault.security.banzaicloud.io/vault-addr: "http://vault:8200"
+        vault.security.banzaicloud.io/vault-path: "secret/rental-platform"
+        vault.security.banzaicloud.io/vault-role: "rental-platform"
+        vault.security.banzaicloud.io/vault-skip-verify: "true"
+        {{- end }}
+      labels:
+        app: notificationService
+    spec:
+      containers:
+        - name: notificationService
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.notificationService.image.repository }}:{{ .Values.notificationService.image.tag }}"
+          ports:
+            - containerPort: 8083
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka:19092"
+            - name: KAFKA_TOPIC
+              value: "events-topic"
+            - name: KAFKA_CONSUMER_GROUP_ID
+              value: "notificationService-group"
+          {{if .Values.docService.vault.enabled}}
+            - name: POSTGRES_CONNECTION_STRING
+              value: "vault:rental-platform/data/notificationService#POSTGRES_CONNECTION_STRING"
+            - name: TELEGRAM_BOT_TOKEN
+              value: "vault:rental-platform/data/notificationService#TELEGRAM_BOT_TOKEN"
+          {{- end }}
+            - name: APPLICATION_PORT
+              value: "8083"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8083
+            initialDelaySeconds: 10
+            periodSeconds: 5
+        {{- with .Values.notificationService.resources }}
+          resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+{{- end }}

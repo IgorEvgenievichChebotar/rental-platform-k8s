@@ -1,0 +1,84 @@
+{{- if .Values.rentalCore.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: rentalCore
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: rentalCore
+spec:
+  # ---------- масштаб ----------
+  replicas: {{ .Values.rentalCore.replicaCount }}
+
+  # ---------- селектор ----------
+  selector:
+    matchLabels:
+      app: rentalCore
+
+  # ---------- pod template ----------
+  template:
+    metadata:
+      annotations:
+        {{- if .Values.rentalCore.vault.enabled }}
+        vault.security.banzaicloud.io/vault-addr:  "http://vault:8200"
+        vault.security.banzaicloud.io/vault-path:  "secret/rental-platform"
+        vault.security.banzaicloud.io/vault-role:  "rental-platform"
+        vault.security.banzaicloud.io/vault-skip-verify: "true"
+        {{- end }}
+      labels:
+        app: rentalCore
+    spec:
+      containers:
+      - name: rentalCore
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.rentalCore.image.repository }}:{{ .Values.rentalCore.image.tag }}"
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DOCUMENT_SERVICE_URL
+          value:  "http://document-service:8081"
+        - name: MAINTENANCE_SERVICE_URL
+          value:  "http://maintenance-service:8082"
+        - name: NOTIFICATION_SERVICE_URL
+          value:  "http://notificationService:8083"
+        - name: KAFKA_TOPIC
+          value:  "events-topic"
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value:  "kafka:19092"
+        {{- if .Values.rentalCore.vault.enabled }}
+        - name: POSTGRES_CONNECTION_STRING
+          value: "vault:rental-platform/data/rentalCore#POSTGRES_CONNECTION_STRING"
+        {{- end }}
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        {{- with .Values.rentalCore.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+  # ---------- стратегия Canary (подтягивается из values.yaml) ----------
+  {{- if .Values.rentalCore.rollout.enabled }}
+  strategy:
+    canary:
+      canaryService: rentalCore-canary
+      stableService: rentalCore-stable
+      {{- with .Values.rentalCore.rollout.strategy.canary.steps }}
+      steps:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.monitoring.analysis }}
+      analysis:
+        templates:
+        - templateName: success-rate
+        args:
+        - name: service-name
+          value: rentalCore
+        startingStep: 1
+        successfulRunHistoryLimit: 5
+        unsuccessfulRunHistoryLimit: 3
+      {{- end }}
+  {{- end }}
+{{- end }}

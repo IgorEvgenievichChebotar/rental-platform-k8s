@@ -1,0 +1,177 @@
+global:
+  namespace: rental-platform
+  domain: local
+  imageRegistry: localhost:5000
+
+vault:
+  enabled: true
+  server:
+    dev:
+      enabled: true
+    service:
+      type: ClusterIP
+    ingress:
+      enabled: true
+      className: nginx
+      hosts:
+        - host: vault.local
+          paths:
+            - path: /
+              pathType: Prefix
+  mutatingWebhook:
+    enabled: true
+    
+bank-vaults:
+  webhook:
+    enabled: true
+    configMapName: vault-webhook-config
+    env:
+      VAULT_ADDR: "http://vault:8200"
+      VAULT_PATH: "secret"
+      VAULT_ROLE: "rental-platform"
+
+monitoring:
+  prometheus:
+    enabled: true
+  grafana:
+    enabled: true
+    ingress:
+      enabled: true
+      className: nginx
+      hosts:
+        - grafana.local
+  analysis:
+    successRateThreshold: 0.95
+    errorRateThreshold: 0.05
+    interval: 30s
+    failureLimit: 3
+
+rollouts:
+  enabled: true
+  controller:
+    metrics:
+      enabled: true
+
+rentalCore:
+  enabled: true
+  image:
+    repository: rentalCore
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicaCount: 3
+  service:
+    type: ClusterIP
+    port: 80
+  ingress:
+    enabled: true
+    className: nginx
+    host: rentalCore.local
+  vault:
+    enabled: true
+    role: "rental-platform"
+    path: "rental-platform"
+  rollout:
+    enabled: true
+    strategy:
+      canary:
+        steps:
+          - setWeight: 20
+          - pause: {duration: 30s}
+          - setWeight: 50
+          - pause: {duration: 30s}
+        analysis:
+          templates:
+            - templateName: success-rate
+          args:
+            - name: service-name
+              value: rentalCore-api
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "200m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+      
+docService:
+  enabled: true
+  image:
+    repository: doc-service
+    tag: latest
+  replicaCount: 2
+  vault:
+    enabled: true
+  service:
+    type: ClusterIP
+    port: 8080
+  ingress:
+    enabled: true
+    className: nginx
+    host: doc-service.local
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+maintenanceService:
+  enabled: true
+  image:
+    repository: maintenance-service
+    tag: latest
+  replicaCount: 2
+  vault:
+    enabled: true
+  service:
+    type: ClusterIP
+    port: 8080
+  ingress:
+    enabled: true
+    className: nginx
+    host: maintenance-service.local
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+notificationService:
+  enabled: true
+  image:
+    repository: notificationService
+    tag: latest
+  replicaCount: 2
+  vault:
+    enabled: true
+  service:
+    type: ClusterIP
+    port: 8080
+  ingress:
+    enabled: true
+    className: nginx
+    host: notificationService.local
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+kafka:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 8Gi
+
+postgres:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 8Gi
+  vault:
+    enabled: true

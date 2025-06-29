@@ -1,0 +1,21 @@
+{{- if and .Values.rentalCore.enabled .Values.rentalCore.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rentalCore
+  namespace: {{ .Values.global.namespace }}
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.rentalCore.ingress.className }}
+spec:
+  rules:
+  - host: {{ .Values.rentalCore.ingress.host }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: rentalCore-stable
+            port:
+              number: {{ .Values.rentalCore.service.por }}
+{{- end }}

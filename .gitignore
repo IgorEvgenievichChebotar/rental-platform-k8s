@@ -1,0 +1,41 @@
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Helm generated files
+*.tgz
+.helmignore
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Local development files
+.env
+.env.local
+.env.*.local
+
+# Dependencies lock files
+Chart.lock
+charts/*.tgz
+
+# Backup files
+*.backup
+*.bak
+
+# Test output
+test-results/
+coverage/ 

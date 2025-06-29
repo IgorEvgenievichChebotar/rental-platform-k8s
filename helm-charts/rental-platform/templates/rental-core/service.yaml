@@ -1,0 +1,14 @@
+{{- if .Values.rentalCore.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: rentalCore
+  namespace: {{ .Values.global.namespace }}
+spec:
+  selector:
+    app: rentalCore
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+{{- end }}

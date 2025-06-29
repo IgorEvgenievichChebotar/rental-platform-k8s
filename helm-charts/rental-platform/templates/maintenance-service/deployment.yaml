@@ -1,0 +1,46 @@
+{{- if .Values.maintenanceService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: maintenanceService
+  namespace: {{ .Values.global.namespace }}
+spec:
+  replicas: {{ .Values.maintenanceService.replicaCount }}
+  selector:
+    matchLabels:
+      app: maintenanceService
+  template:
+    metadata:
+      annotations:
+        {{- if .Values.maintenanceService.vault.enabled }}
+        vault.security.banzaicloud.io/vault-addr: "http://vault:8200"
+        vault.security.banzaicloud.io/vault-path: "secret/rental-platform"
+        vault.security.banzaicloud.io/vault-role: "rental-platform"
+        vault.security.banzaicloud.io/vault-skip-verify: "true"
+        {{- end }}
+      labels:
+        app: maintenanceService
+    spec:
+      containers:
+      - name: maintenanceService
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.maintenanceService.image.repository }}:{{ .Values.maintenanceService.image.tag }}"
+        ports:
+        - containerPort: 8082
+        env:
+        - name: APPLICATION_PORT
+          value: "8082"
+        {{if .Values.maintenanceService.vault.enabled}}
+        - name: POSTGRES_CONNECTION_STRING
+          value: "vault:rental-platform/data/maintenanceService#POSTGRES_CONNECTION_STRING"
+        {{- end }}
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8082
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        {{- with .Values.maintenanceService.resources }}
+        resources:
+          {{ toYaml . | nindent 10 }}
+        {{- end }}
+{{- end }}

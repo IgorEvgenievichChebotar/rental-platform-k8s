@@ -1,0 +1,75 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: rental-platform-stack
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - name: vault
+        path: argocd/application/vault.yaml
+        priority: 1
+      - name: prometheus-stack
+        path: argocd/application/prometheus.yaml
+        priority: 2
+      - name: argo-rollouts
+        path: argocd/application/argo-rollouts.yaml
+        priority: 3
+      - name: rental-platform
+        path: argocd/application/rental-platform.yaml
+        priority: 4
+  
+  template:
+    metadata:
+      name: '{{name}}'
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/IgorEvgenievichChebotar/rental-platform-k8s
+        targetRevision: HEAD
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+      syncWaves:
+        - order: '{{priority}}'
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rental-platform-infrastructure
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  
+  source:
+    repoURL: https://github.com/IgorEvgenievichChebotar/rental-platform-k8s
+    targetRevision: HEAD
+    path: argocd
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground 

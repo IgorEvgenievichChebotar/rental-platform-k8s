@@ -1,0 +1,14 @@
+{{- if .Values.docService.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: docService
+  namespace: {{ .Values.global.namespace }}
+spec:
+  selector:
+    app: docService
+  ports:
+  - port: 8081
+    targetPort: 8081
+    protocol: TCP
+{{- end }}

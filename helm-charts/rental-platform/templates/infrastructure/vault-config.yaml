@@ -1,0 +1,104 @@
+{{- if .Values.vault.enabled }}
+# Bank-Vaults Webhook Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-webhook-config
+  namespace: {{ .Values.global.namespace }}
+data:
+  vault-addr: "http://vault:8200"
+  vault-path: "secret"
+  vault-role: "rental-platform"
+---
+# Vault Auth Role
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-auth-config
+  namespace: {{ .Values.global.namespace }}
+data:
+  auth.hcl: |
+    # Kubernetes auth backend config
+    auth "kubernetes" {
+      role "rental-platform" {
+        bound_service_account_names = ["default"]
+        bound_service_account_namespaces = ["{{ .Values.global.namespace }}"]
+        policies = ["rental-platform-policy"]
+        ttl = "1h"
+      }
+    }
+    
+    # Policy for rental-platform
+    policy "rental-platform-policy" {
+      rule {
+        path "secret/data/rental-platform/*" {
+          capabilities = ["read"]
+        }
+      }
+    }
+---
+# Vault initialization Job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vault-init
+  namespace: {{ .Values.global.namespace }}
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: vault-init
+        image: vault:1.13.1
+        env:
+        - name: VAULT_ADDR
+          value: "http://vault:8200"
+        - name: VAULT_TOKEN
+          value: "root"
+        command:
+        - sh
+        - -c
+        - |
+          # Wait for Vault to be ready
+          until vault status; do
+            echo "Waiting for vault..."
+            sleep 5
+          done
+          
+          # Enable KV secrets engine
+          vault secrets enable -version=2 -path=secret kv || true
+          
+          # Store database connection strings
+          vault kv put secret/rental-platform/rentalCore \
+            POSTGRES_CONNECTION_STRING="r2dbc:postgresql://postgres:postgres@localhost:5432/rentaldb"
+
+          vault kv put secret/rental-platform/notificationService \
+            POSTGRES_CONNECTION_STRING="r2dbc:postgresql://postgres:postgres@localhost:5432/rentaldb"
+          vault kv put secret/rental-platform/notificationService \
+            TELEGRAM_BOT_TOKEN="7553158138:AAGumysUe754OEa_kTIKQJt6gkd23gMixFY"
+
+
+          
+          # Enable Kubernetes auth
+          vault auth enable kubernetes || true
+          
+          # Configure Kubernetes auth
+          vault write auth/kubernetes/config \
+            token_reviewer_jwt="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+            kubernetes_host="https://$KUBERNETES_PORT_443_TCP_ADDR:443" \
+            kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          
+          # Create policy
+          vault policy write rental-platform-policy - <<EOF
+          path "secret/data/rental-platform/*" {
+            capabilities = ["read"]
+          }
+          EOF
+          
+          # Create role
+          vault write auth/kubernetes/role/rental-platform \
+            bound_service_account_names=default \
+            bound_service_account_namespaces={{ .Values.global.namespace }} \
+            policies=rental-platform-policy \
+            ttl=1h
+{{- end }}

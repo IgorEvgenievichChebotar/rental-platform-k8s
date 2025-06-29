@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rental-platform
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: rental-platform
+spec:
+  project: default
+  
+  source:
+    repoURL: https://github.com/IgorEvgenievichChebotar/rental-platform-k8s
+    targetRevision: HEAD
+    path: helm-charts/rental-platform
+    helm:
+      valueFiles:
+        - values.yaml
+      parameters:
+        - name: global.imageRegistry
+          value: "localhost:5000"
+        - name: processingOrders.image.tag
+          value: "latest"
+        - name: rentalCore.image.tag  
+          value: "latest"
+        - name: promotions.image.tag
+          value: "latest"
+        - name: databaseMigrator.image.tag
+          value: "latest"
+  
+destination:
+  server: https://kubernetes.default.svc
+  namespace: rental-platform
+  
+syncPolicy:
+  automated:
+    prune: true
+    selfHeal: true
+  syncOptions:
+    - CreateNamespace=true
+    - PrunePropagationPolicy=foreground
+  retry:
+    limit: 5
+    backoff:
+      duration: 5s
+      factor: 2
+      maxDuration: 3m
