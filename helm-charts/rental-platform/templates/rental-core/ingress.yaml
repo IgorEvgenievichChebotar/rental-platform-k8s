@@ -17,5 +17,5 @@ spec:
           service:
             name: rentalCore-stable
             port:
-              number: {{ .Values.rentalCore.service.por }}
+              number: {{ .Values.rentalCore.service.port }}
 {{- end }}
