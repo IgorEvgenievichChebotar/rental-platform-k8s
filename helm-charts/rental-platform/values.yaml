@@ -1,5 +1,5 @@
 global:
-  namespace: rental-platform
+  namespace: default
   domain: local
   imageRegistry: localhost:5000
 

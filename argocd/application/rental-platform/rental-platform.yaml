@@ -29,7 +29,7 @@ spec:
   
   destination:
     server: https://kubernetes.default.svc
-    namespace: rental-platform
+    namespace: default
   
   syncPolicy:
     automated:
